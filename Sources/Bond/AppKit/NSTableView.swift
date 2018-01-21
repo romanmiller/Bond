@@ -214,16 +214,16 @@ Element.DataSource: QueryableDataSourceProtocol, Element.DataSource.Index == Int
 public extension SignalProtocol where Element: ObservableArrayEventProtocol, Error == NoError {
 
     @discardableResult
-    public func bind(to tableView: NSTableView, animated: Bool = true, createCell: @escaping (ObservableArray<Element.Item>, Int, NSTableView) -> NSView?) -> Disposable {
+    public func bind(to tableView: NSTableView, animated: Bool = true, createCell: @escaping (ObservableArrayBase<Element.Item>, Int, NSTableView) -> NSView?) -> Disposable {
         if animated {
-            return toPatchesByResettingBatch()._bind(to: tableView, using: DefaultTableViewBond<ObservableArray<Element.Item>>(createCell: createCell))
+            return toPatchesByResettingBatch()._bind(to: tableView, using: DefaultTableViewBond<ObservableArrayBase<Element.Item>>(createCell: createCell))
         } else {
-            return toPatchesByResettingBatch()._bind(to: tableView, using: ReloadingTableViewBond<ObservableArray<Element.Item>>(createCell: createCell))
+            return toPatchesByResettingBatch()._bind(to: tableView, using: ReloadingTableViewBond<ObservableArrayBase<Element.Item>>(createCell: createCell))
         }
     }
 
     @discardableResult
-    public func bind<B: TableViewBond>(to tableView: NSTableView, using bond: B) -> Disposable where B.DataSource == ObservableArray<Element.Item> {
+    public func bind<B: TableViewBond>(to tableView: NSTableView, using bond: B) -> Disposable where B.DataSource == ObservableArrayBase<Element.Item> {
         return toPatchesByResettingBatch()._bind(to: tableView, using: bond)
     }
 }
@@ -231,16 +231,16 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol, Err
 public extension SignalProtocol where Element: ObservableArrayEventProtocol, Element.Item: Equatable, Error == NoError {
 
     @discardableResult
-    public func bind(to tableView: NSTableView, animated: Bool = true, createCell: @escaping (ObservableArray<Element.Item>, Int, NSTableView) -> NSView?) -> Disposable {
+    public func bind(to tableView: NSTableView, animated: Bool = true, createCell: @escaping (ObservableArrayBase<Element.Item>, Int, NSTableView) -> NSView?) -> Disposable {
         if animated {
-            return toPatches()._bind(to: tableView, using: DefaultTableViewBond<ObservableArray<Element.Item>>(createCell: createCell))
+            return toPatches()._bind(to: tableView, using: DefaultTableViewBond<ObservableArrayBase<Element.Item>>(createCell: createCell))
         } else {
-            return toPatches()._bind(to: tableView, using: ReloadingTableViewBond<ObservableArray<Element.Item>>(createCell: createCell))
+            return toPatches()._bind(to: tableView, using: ReloadingTableViewBond<ObservableArrayBase<Element.Item>>(createCell: createCell))
         }
     }
 
     @discardableResult
-    public func bind<B: TableViewBond>(to tableView: NSTableView, using bond: B) -> Disposable where B.DataSource == ObservableArray<Element.Item> {
+    public func bind<B: TableViewBond>(to tableView: NSTableView, using bond: B) -> Disposable where B.DataSource == ObservableArrayBase<Element.Item> {
         return toPatches()._bind(to: tableView, using: bond)
     }
 }
