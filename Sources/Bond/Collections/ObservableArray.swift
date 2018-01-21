@@ -163,7 +163,6 @@ extension ObservableArrayBase where Item: Equatable {
 
 public class MutableObservableArray<Item>: ObservableArray<Item> {
 
-    public let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
     /// Append `newElement` to the array.
     public func append(_ newElement: Item) {
         lock.lock(); defer { lock.unlock() }
