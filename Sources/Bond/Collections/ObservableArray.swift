@@ -531,7 +531,7 @@ fileprivate extension SignalProtocol where Element: Sequence {
     }
 }
 
-func generateDiff(from sequenceOfChanges: [ObservableArrayChange]) -> [ObservableArrayChange] {
+public func generateDiff(from sequenceOfChanges: [ObservableArrayChange]) -> [ObservableArrayChange] {
     var diff = sequenceOfChanges.flatMap { $0.unwrap }
 
     for i in 0..<diff.count {
