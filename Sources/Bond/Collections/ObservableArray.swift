@@ -404,9 +404,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
     /// Complexity of mapping on each event (change) is O(1).
     public func lazyMap<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>, Error> {
         return map { (event: Element) -> ObservableArrayEvent<U> in
-            let mappedArray = event.source.lazy.map(transform)
-            LazyMapRandomAccessCollection
-            return ObservableArrayEvent<U>(change: event.change, source: mappedArray)
+            return ObservableArrayEvent<U>(change: event.change, source: event.source.lazy.map(transform))
         }
     }
 
