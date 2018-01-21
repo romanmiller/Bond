@@ -39,36 +39,36 @@ public enum ObservableArrayChange {
 public protocol ObservableArrayEventProtocol {
     associatedtype Item
     var change: ObservableArrayChange { get }
-    var source: ObservableArrayBase<Item> { get }
+    var source: [Item] { get }
 }
 
 public struct ObservableArrayEvent<Item>: ObservableArrayEventProtocol {
     public let change: ObservableArrayChange
-    public let source: ObservableArrayBase<Item>
+    public let source: [Item]
 
-    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
-        self.change = change
-        self.source = source
-    }
+//    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
+//        self.change = change
+//        self.source = source
+//    }
 
     public init(change: ObservableArrayChange, source: [Item]) {
         self.change = change
-        self.source = ObservableArray(source)
+        self.source = source
     }
 }
 
 public struct ObservableArrayPatchEvent<Item>: ObservableArrayEventProtocol {
     public let change: ObservableArrayChange
-    public let source: ObservableArrayBase<Item>
+    public let source: [Item]
 
-    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
-        self.change = change
-        self.source = source
-    }
+//    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
+//        self.change = change
+//        self.source = source
+//    }
 
     public init(change: ObservableArrayChange, source: [Item]) {
         self.change = change
-        self.source = ObservableArray(source)
+        self.source = source
     }
 }
 
@@ -85,6 +85,8 @@ open class ObservableArrayBase<Item>: SignalProtocol {
         
     }
     
+    public let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
+
     public func makeIterator() -> Array<Item>.Iterator {
         return array.makeIterator()
     }
@@ -120,7 +122,7 @@ open class ObservableArrayBase<Item>: SignalProtocol {
     }
 
     public func observe(with observer: @escaping (Event<ObservableArrayEvent<Item>, NoError>) -> Void) -> Disposable {
-        observer(.next(ObservableArrayEvent(change: .reset, source: self)))
+        observer(.next(ObservableArrayEvent(change: .reset, source: array)))
         return subject.observe(with: observer)
     }
 }
@@ -167,21 +169,21 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     public func append(_ newElement: Item) {
         lock.lock(); defer { lock.unlock() }
         _array.append(newElement)
-        subject.next(ObservableArrayEvent(change: .inserts([array.count-1]), source: self))
+        subject.next(ObservableArrayEvent(change: .inserts([array.count-1]), source: _array))
     }
 
     /// Insert `newElement` at index `i`.
     public func insert(_ newElement: Item, at index: Int)  {
         lock.lock(); defer { lock.unlock() }
         _array.insert(newElement, at: index)
-        subject.next(ObservableArrayEvent(change: .inserts([index]), source: self))
+        subject.next(ObservableArrayEvent(change: .inserts([index]), source: _array))
     }
 
     /// Insert elements `newElements` at index `i`.
     public func insert(contentsOf newElements: [Item], at index: Int) {
         lock.lock(); defer { lock.unlock() }
         _array.insert(contentsOf: newElements, at: index)
-        subject.next(ObservableArrayEvent(change: .inserts(Array(index..<index+newElements.count)), source: self))
+        subject.next(ObservableArrayEvent(change: .inserts(Array(index..<index+newElements.count)), source: _array))
     }
 
     /// Move the element at index `i` to index `toIndex`.
@@ -189,7 +191,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
         lock.lock(); defer { lock.unlock() }
         let item = _array.remove(at: fromIndex)
         _array.insert(item, at: toIndex)
-        subject.next(ObservableArrayEvent(change: .move(fromIndex, toIndex), source: self))
+        subject.next(ObservableArrayEvent(change: .move(fromIndex, toIndex), source: _array))
     }
 
     /// Remove and return the element at index i.
@@ -197,7 +199,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     public func remove(at index: Int) -> Item {
         lock.lock(); defer { lock.unlock() }
         let element = _array.remove(at: index)
-        subject.next(ObservableArrayEvent(change: .deletes([index]), source: self))
+        subject.next(ObservableArrayEvent(change: .deletes([index]), source: _array))
         return element
     }
 
@@ -206,7 +208,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     public func removeLast() -> Item {
         lock.lock(); defer { lock.unlock() }
         let element = _array.removeLast()
-        subject.next(ObservableArrayEvent(change: .deletes([array.count]), source: self))
+        subject.next(ObservableArrayEvent(change: .deletes([array.count]), source: _array))
         return element
     }
 
@@ -215,7 +217,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
         lock.lock(); defer { lock.unlock() }
         let deletes = Array(0..<array.count)
         _array.removeAll()
-        subject.next(ObservableArrayEvent(change: .deletes(deletes), source: self))
+        subject.next(ObservableArrayEvent(change: .deletes(deletes), source: _array))
     }
 
     public override subscript(index: Int) -> Item {
@@ -225,7 +227,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
         set {
             lock.lock(); defer { lock.unlock() }
             _array[index] = newValue
-            subject.next(ObservableArrayEvent(change: .updates([index]), source: self))
+            subject.next(ObservableArrayEvent(change: .updates([index]), source: _array))
         }
     }
 
@@ -248,15 +250,15 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
         // if only reset, do not batch:
         if diff == [.reset] {
             _array = proxy.array
-            subject.next(ObservableArrayEvent(change: .reset, source: self))
+            subject.next(ObservableArrayEvent(change: .reset, source: _array))
         } else if diff.count > 0 {
             // ...otherwise batch:
-            subject.next(ObservableArrayEvent(change: .beginBatchEditing, source: self))
+            subject.next(ObservableArrayEvent(change: .beginBatchEditing, source: _array))
             _array = proxy.array
             diff.forEach { change in
-                subject.next(ObservableArrayEvent(change: change, source: self))
+                subject.next(ObservableArrayEvent(change: change, source: _array))
             }
-            subject.next(ObservableArrayEvent(change: .endBatchEditing, source: self))
+            subject.next(ObservableArrayEvent(change: .endBatchEditing, source: _array))
         }
     }
 
@@ -274,8 +276,8 @@ extension MutableObservableArray: BindableProtocol {
             .take(until: deallocated)
             .observeNext { [weak self] event in
                 guard let s = self else { return }
-                s._array = event.source.array
-                s.subject.next(ObservableArrayEvent(change: event.change, source: s))
+                s._array = event.source
+                s.subject.next(ObservableArrayEvent(change: event.change, source: s._array))
             }
     }
 }
@@ -312,7 +314,7 @@ extension ObservableArrayEvent: DataSourceEventProtocol {
         return change.asDataSourceEventKind
     }
 
-    public var dataSource: ObservableArrayBase<Item> {
+    public var dataSource: [Item] {
         return source
     }
 }
@@ -325,7 +327,7 @@ extension ObservableArrayPatchEvent: DataSourceEventProtocol {
         return change.asDataSourceEventKind
     }
 
-    public var dataSource: ObservableArrayBase<Item> {
+    public var dataSource: [Item] {
         return source
     }
 }
@@ -350,7 +352,7 @@ extension MutableObservableArray {
     public func replace(with array: [Item]) {
         lock.lock(); defer { lock.unlock() }
         self._array = array
-        subject.next(ObservableArrayEvent(change: .reset, source: self))
+        subject.next(ObservableArrayEvent(change: .reset, source: array))
     }
 }
 
@@ -361,23 +363,23 @@ extension MutableObservableArray where Item: Equatable {
             lock.lock()
 
             let diff = self.array.extendedDiff(array)
-            subject.next(ObservableArrayEvent(change: .beginBatchEditing, source: self))
+            subject.next(ObservableArrayEvent(change: .beginBatchEditing, source: array))
             self._array = array
 
             for step in diff {
                 switch step {
                 case .insert(let index):
-                    subject.next(ObservableArrayEvent(change: .inserts([index]), source: self))
+                    subject.next(ObservableArrayEvent(change: .inserts([index]), source: array))
 
                 case .delete(let index):
-                    subject.next(ObservableArrayEvent(change: .deletes([index]), source: self))
+                    subject.next(ObservableArrayEvent(change: .deletes([index]), source: array))
 
                 case .move(let from, let to):
-                    subject.next(ObservableArrayEvent(change: .move(from, to), source: self))
+                    subject.next(ObservableArrayEvent(change: .move(from, to), source: array))
                 }
             }
 
-            subject.next(ObservableArrayEvent(change: .endBatchEditing, source: self))
+            subject.next(ObservableArrayEvent(change: .endBatchEditing, source: array))
             lock.unlock()
         } else {
             replace(with: array)
@@ -393,7 +395,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
     /// Complexity of mapping on each event is O(n).
     public func map<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>, Error> {
         return map { (event: Element) -> ObservableArrayEvent<U> in
-            let mappedArray = ObservableArray(event.source.array.map(transform))
+            let mappedArray = event.source.map(transform)
             return ObservableArrayEvent<U>(change: event.change, source: mappedArray)
         }
     }
@@ -402,7 +404,8 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
     /// Complexity of mapping on each event (change) is O(1).
     public func lazyMap<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>, Error> {
         return map { (event: Element) -> ObservableArrayEvent<U> in
-            let mappedArray = ObservableArray(event.source.array.lazy.map(transform))
+            let mappedArray = event.source.lazy.map(transform)
+            LazyMapRandomAccessCollection
             return ObservableArrayEvent<U>(change: event.change, source: mappedArray)
         }
     }
@@ -413,7 +416,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
         var isBatching = false
         var previousIndexMap: [Int: Int] = [:]
         return map { (event: Element) -> [ObservableArrayEvent<Item>] in
-            let array = event.source.array
+            let array = event.source
             var filtered: [Item] = []
             var indexMap: [Int: Int] = [:]
 
@@ -480,8 +483,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
                 changes.append(.endBatchEditing)
             }
 
-            let source = ObservableArray(filtered)
-            return changes.map { ObservableArrayEvent(change: $0, source: source) }
+            return changes.map { ObservableArrayEvent(change: $0, source: filtered) }
             }._unwrap()
     }
 }
@@ -788,11 +790,11 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol, Ele
                     switch observableArrayEvent.change {
                     case .beginBatchEditing:
                         isBatching = true
-                        originalArray = source.array
+                        originalArray = source
                         observer.next(.init(change: .beginBatchEditing, source: source))
                     case .endBatchEditing:
                         isBatching = false
-                        let array = observableArrayEvent.source.array
+                        let array = observableArrayEvent.source
                         let diff = originalArray.extendedDiff(array)
                         let patch = diff.patch(from: originalArray, to: array)
                         for step in patch {
