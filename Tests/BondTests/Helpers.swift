@@ -44,7 +44,7 @@ extension Event {
             } else if let left = asOptional(left) as? Optional<String>, let right = asOptional(right) as? Optional<String> {
                 return left == right
             } else if let left = left as? ObservableArrayEvent<Int>, let right = right as? ObservableArrayEvent<Int> {
-                return left.change == right.change && (left.source === right.source || right.source === AnyObservableArray)
+                return left.change == right.change && (left.source == right.source || right.source == AnyObservableArray.array)
             } else if let left = left as? Observable2DArrayEvent<String, Int>, let right = right as? Observable2DArrayEvent<String, Int> {
                 return left.change == right.change && (left.source === right.source || right.source === AnyObservable2DArray)
             } else if left is Void, right is Void {
@@ -100,7 +100,7 @@ extension SignalProtocol {
     }
 }
 
-let AnyObservableArray = ObservableArray<Int>()
+let AnyObservableArray = ObservableArray<Int>(Array<Int>(repeating: 3, count: 20))
 let AnyObservable2DArray = Observable2DArray<String,Int>()
 
 extension Observable2DArrayChange: Equatable {
