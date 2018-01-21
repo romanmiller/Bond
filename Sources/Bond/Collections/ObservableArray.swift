@@ -39,14 +39,14 @@ public enum ObservableArrayChange {
 public protocol ObservableArrayEventProtocol {
     associatedtype Item
     var change: ObservableArrayChange { get }
-    var source: ObservableArray<Item> { get }
+    var source: ObservableArrayBase<Item> { get }
 }
 
 public struct ObservableArrayEvent<Item>: ObservableArrayEventProtocol {
     public let change: ObservableArrayChange
-    public let source: ObservableArray<Item>
+    public let source: ObservableArrayBase<Item>
 
-    public init(change: ObservableArrayChange, source: ObservableArray<Item>) {
+    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
         self.change = change
         self.source = source
     }
@@ -59,9 +59,9 @@ public struct ObservableArrayEvent<Item>: ObservableArrayEventProtocol {
 
 public struct ObservableArrayPatchEvent<Item>: ObservableArrayEventProtocol {
     public let change: ObservableArrayChange
-    public let source: ObservableArray<Item>
+    public let source: ObservableArrayBase<Item>
 
-    public init(change: ObservableArrayChange, source: ObservableArray<Item>) {
+    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
         self.change = change
         self.source = source
     }
@@ -72,15 +72,15 @@ public struct ObservableArrayPatchEvent<Item>: ObservableArrayEventProtocol {
     }
 }
 
-public class ObservableArray<Item>: SignalProtocol {
+open class ObservableArrayBase<Item>: SignalProtocol {
 
-    public fileprivate(set) var array: [Item]
+    open var array: [Item]{
+        get {
+            fatalError("Don't use this class")
+        }
+    }
     fileprivate let subject = PublishSubject<ObservableArrayEvent<Item>, NoError>()
     fileprivate let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
-
-    public init(_ array: [Item] = []) {
-        self.array = array
-    }
 
     public func makeIterator() -> Array<Item>.Iterator {
         return array.makeIterator()
@@ -122,23 +122,38 @@ public class ObservableArray<Item>: SignalProtocol {
     }
 }
 
-extension ObservableArray: CustomDebugStringConvertible {
+
+public class ObservableArray<Item> : ObservableArrayBase<Item> {
+    
+    var _array : [Item]
+    
+    override public var array: [Item] {
+        return _array
+    }
+    
+    public init(_ array: [Item] = []) {
+        _array = array
+        super.init()
+    }
+}
+
+extension ObservableArrayBase: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         return array.debugDescription
     }
 }
 
-extension ObservableArray: Deallocatable {
+extension ObservableArrayBase: Deallocatable {
 
     public var deallocated: Signal<Void, NoError> {
         return subject.disposeBag.deallocated
     }
 }
 
-extension ObservableArray where Item: Equatable {
+extension ObservableArrayBase where Item: Equatable {
 
-    public static func ==(lhs: ObservableArray<Item>, rhs: ObservableArray<Item>) -> Bool {
+    public static func ==(lhs: ObservableArrayBase<Item>, rhs: ObservableArrayBase<Item>) -> Bool {
         return lhs.array == rhs.array
     }
 }
@@ -148,29 +163,29 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     /// Append `newElement` to the array.
     public func append(_ newElement: Item) {
         lock.lock(); defer { lock.unlock() }
-        array.append(newElement)
+        _array.append(newElement)
         subject.next(ObservableArrayEvent(change: .inserts([array.count-1]), source: self))
     }
 
     /// Insert `newElement` at index `i`.
     public func insert(_ newElement: Item, at index: Int)  {
         lock.lock(); defer { lock.unlock() }
-        array.insert(newElement, at: index)
+        _array.insert(newElement, at: index)
         subject.next(ObservableArrayEvent(change: .inserts([index]), source: self))
     }
 
     /// Insert elements `newElements` at index `i`.
     public func insert(contentsOf newElements: [Item], at index: Int) {
         lock.lock(); defer { lock.unlock() }
-        array.insert(contentsOf: newElements, at: index)
+        _array.insert(contentsOf: newElements, at: index)
         subject.next(ObservableArrayEvent(change: .inserts(Array(index..<index+newElements.count)), source: self))
     }
 
     /// Move the element at index `i` to index `toIndex`.
     public func moveItem(from fromIndex: Int, to toIndex: Int) {
         lock.lock(); defer { lock.unlock() }
-        let item = array.remove(at: fromIndex)
-        array.insert(item, at: toIndex)
+        let item = _array.remove(at: fromIndex)
+        _array.insert(item, at: toIndex)
         subject.next(ObservableArrayEvent(change: .move(fromIndex, toIndex), source: self))
     }
 
@@ -178,7 +193,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     @discardableResult
     public func remove(at index: Int) -> Item {
         lock.lock(); defer { lock.unlock() }
-        let element = array.remove(at: index)
+        let element = _array.remove(at: index)
         subject.next(ObservableArrayEvent(change: .deletes([index]), source: self))
         return element
     }
@@ -187,7 +202,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     @discardableResult
     public func removeLast() -> Item {
         lock.lock(); defer { lock.unlock() }
-        let element = array.removeLast()
+        let element = _array.removeLast()
         subject.next(ObservableArrayEvent(change: .deletes([array.count]), source: self))
         return element
     }
@@ -196,7 +211,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     public func removeAll() {
         lock.lock(); defer { lock.unlock() }
         let deletes = Array(0..<array.count)
-        array.removeAll()
+        _array.removeAll()
         subject.next(ObservableArrayEvent(change: .deletes(deletes), source: self))
     }
 
@@ -206,7 +221,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
         }
         set {
             lock.lock(); defer { lock.unlock() }
-            array[index] = newValue
+            _array[index] = newValue
             subject.next(ObservableArrayEvent(change: .updates([index]), source: self))
         }
     }
@@ -229,12 +244,12 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
 
         // if only reset, do not batch:
         if diff == [.reset] {
-            array = proxy.array
+            _array = proxy.array
             subject.next(ObservableArrayEvent(change: .reset, source: self))
         } else if diff.count > 0 {
             // ...otherwise batch:
             subject.next(ObservableArrayEvent(change: .beginBatchEditing, source: self))
-            array = proxy.array
+            _array = proxy.array
             diff.forEach { change in
                 subject.next(ObservableArrayEvent(change: change, source: self))
             }
@@ -245,7 +260,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
     /// Change the underlying value withouth notifying the observers.
     public func silentUpdate(_ update: (inout [Item]) -> Void) {
         lock.lock(); defer { lock.unlock() }
-        update(&array)
+        update(&_array)
     }
 }
 
@@ -256,7 +271,7 @@ extension MutableObservableArray: BindableProtocol {
             .take(until: deallocated)
             .observeNext { [weak self] event in
                 guard let s = self else { return }
-                s.array = event.source.array
+                s._array = event.source.array
                 s.subject.next(ObservableArrayEvent(change: event.change, source: s))
             }
     }
@@ -294,7 +309,7 @@ extension ObservableArrayEvent: DataSourceEventProtocol {
         return change.asDataSourceEventKind
     }
 
-    public var dataSource: ObservableArray<Item> {
+    public var dataSource: ObservableArrayBase<Item> {
         return source
     }
 }
@@ -307,12 +322,12 @@ extension ObservableArrayPatchEvent: DataSourceEventProtocol {
         return change.asDataSourceEventKind
     }
 
-    public var dataSource: ObservableArray<Item> {
+    public var dataSource: ObservableArrayBase<Item> {
         return source
     }
 }
 
-extension ObservableArray: QueryableDataSourceProtocol {
+extension ObservableArrayBase: QueryableDataSourceProtocol {
 
     public var numberOfSections: Int {
         return 1
@@ -331,7 +346,7 @@ extension MutableObservableArray {
 
     public func replace(with array: [Item]) {
         lock.lock(); defer { lock.unlock() }
-        self.array = array
+        self._array = array
         subject.next(ObservableArrayEvent(change: .reset, source: self))
     }
 }
@@ -344,7 +359,7 @@ extension MutableObservableArray where Item: Equatable {
 
             let diff = self.array.extendedDiff(array)
             subject.next(ObservableArrayEvent(change: .beginBatchEditing, source: self))
-            self.array = array
+            self._array = array
 
             for step in diff {
                 switch step {

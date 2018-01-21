@@ -105,7 +105,7 @@ extension Array: DataSourceEventProtocol, ObservableArrayEventProtocol {
         return .reset
     }
 
-    public var source: ObservableArray<Iterator.Element> {
+    public var source: ObservableArrayBase<Iterator.Element> {
         return ObservableArray(self)
     }
 }
