@@ -79,9 +79,12 @@ open class ObservableArrayBase<Item>: SignalProtocol {
             fatalError("Don't use this class")
         }
     }
-    fileprivate let subject = PublishSubject<ObservableArrayEvent<Item>, NoError>()
-    fileprivate let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
-
+    public let subject = PublishSubject<ObservableArrayEvent<Item>, NoError>()
+    
+    public init() {
+        
+    }
+    
     public func makeIterator() -> Array<Item>.Iterator {
         return array.makeIterator()
     }
@@ -160,6 +163,7 @@ extension ObservableArrayBase where Item: Equatable {
 
 public class MutableObservableArray<Item>: ObservableArray<Item> {
 
+    public let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
     /// Append `newElement` to the array.
     public func append(_ newElement: Item) {
         lock.lock(); defer { lock.unlock() }
