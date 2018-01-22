@@ -46,11 +46,6 @@ public struct ObservableArrayEvent<Item>: ObservableArrayEventProtocol {
     public let change: ObservableArrayChange
     public let source: [Item]
 
-//    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
-//        self.change = change
-//        self.source = source
-//    }
-
     public init(change: ObservableArrayChange, source: [Item]) {
         self.change = change
         self.source = source
@@ -60,11 +55,6 @@ public struct ObservableArrayEvent<Item>: ObservableArrayEventProtocol {
 public struct ObservableArrayPatchEvent<Item>: ObservableArrayEventProtocol {
     public let change: ObservableArrayChange
     public let source: [Item]
-
-//    public init(change: ObservableArrayChange, source: ObservableArrayBase<Item>) {
-//        self.change = change
-//        self.source = source
-//    }
 
     public init(change: ObservableArrayChange, source: [Item]) {
         self.change = change
@@ -84,8 +74,6 @@ open class ObservableArrayBase<Item>: SignalProtocol {
     public init() {
         
     }
-    
-    public let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
 
     public func makeIterator() -> Array<Item>.Iterator {
         return array.makeIterator()
@@ -130,7 +118,8 @@ open class ObservableArrayBase<Item>: SignalProtocol {
 
 public class ObservableArray<Item> : ObservableArrayBase<Item> {
     
-    var _array : [Item]
+    fileprivate var _array : [Item]
+   
     
     override public var array: [Item] {
         return _array
@@ -165,6 +154,7 @@ extension ObservableArrayBase where Item: Equatable {
 
 public class MutableObservableArray<Item>: ObservableArray<Item> {
 
+    private let lock = NSRecursiveLock(name: "com.reactivekit.bond.observablearray")
     /// Append `newElement` to the array.
     public func append(_ newElement: Item) {
         lock.lock(); defer { lock.unlock() }
