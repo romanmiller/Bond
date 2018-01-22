@@ -89,26 +89,26 @@ extension Array: DataSourceProtocol {
     }
 }
 
-extension Array: DataSourceEventProtocol, ObservableArrayEventProtocol {
-
-    public typealias BatchKind = BatchKindDiff
-
-    public var kind: DataSourceEventKind {
-        return .reload
-    }
-
-    public var dataSource: Array<Element> {
-        return self
-    }
-
-    public var change: ObservableArrayChange {
-        return .reset
-    }
-
-    public var source: [Iterator.Element] {
-        return self
-    }
-}
+//extension Array: DataSourceEventProtocol, ObservableArrayEventProtocol {
+//
+//    public typealias BatchKind = BatchKindDiff
+//
+//    public var kind: DataSourceEventKind {
+//        return .reload
+//    }
+//
+//    public var dataSource: Array<Element> {
+//        return self
+//    }
+//
+//    public var change: ObservableArrayChange {
+//        return .reset
+//    }
+//
+//    public var source: [Iterator.Element] {
+//        return self
+//    }
+//}
 
 extension SignalProtocol where Element: DataSourceProtocol, Error == NoError {
 
