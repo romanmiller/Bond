@@ -32,6 +32,13 @@ public protocol CollectionViewBond {
     func cellForRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource) -> UICollectionViewCell
 }
 
+public protocol CollectionViewBondDelegate {
+    associatedtype DataSource: DataSourceProtocol
+    
+    func sizeForRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
+    
+}
+
 private struct SimpleCollectionViewBond<DataSource: DataSourceProtocol>: CollectionViewBond {
 
     let createCell: (DataSource, IndexPath, UICollectionView) -> UICollectionViewCell
@@ -44,7 +51,7 @@ private struct SimpleCollectionViewBond<DataSource: DataSourceProtocol>: Collect
 public extension ReactiveExtensions where Base: UICollectionView {
 
     public var delegate: ProtocolProxy {
-        return protocolProxy(for: UICollectionViewDelegate.self, keyPath: \.delegate)
+        return protocolProxy(for: UICollectionViewDelegateFlowLayout.self, keyPath: \.delegate)
     }
 
     public var dataSource: ProtocolProxy {
@@ -58,7 +65,30 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
     public func bind(to collectionView: UICollectionView, createCell: @escaping (DataSource, IndexPath, UICollectionView) -> UICollectionViewCell) -> Disposable {
         return bind(to: collectionView, using: SimpleCollectionViewBond<DataSource>(createCell: createCell))
     }
-
+    
+    
+    @discardableResult
+    public func bind<B: CollectionViewBond>(to collectionView: UICollectionView, using bond: B) -> Disposable where B.DataSource == DataSource, B:CollectionViewBondDelegate {
+        let disposable = CompositeDisposable()
+        disposable += bind(to: collectionView, using: bond)
+        disposable += bind(to: collectionView, with: bond)
+        return disposable
+    }
+    
+    @discardableResult
+    public func bind<D:CollectionViewBondDelegate>(to collectionView: UICollectionView, with delegate:D) -> Disposable where D.DataSource == DataSource {
+        
+        let dataSource = Property<DataSource?>(nil)
+        let disposable = CompositeDisposable()
+        disposable += collectionView.reactive.delegate.feed(
+            property: dataSource,
+            to: #selector(UICollectionViewDelegateFlowLayout.collectionView(_:layout:sizeForItemAt:)),
+            map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, indexPath: IndexPath) -> CGSize in
+                return delegate.sizeForRow(at: indexPath as IndexPath, collectionView: collectionView, dataSource: dataSource!)
+        })
+        return disposable
+    }
+    
     @discardableResult
     public func bind<B: CollectionViewBond>(to collectionView: UICollectionView, using bond: B) -> Disposable where B.DataSource == DataSource {
 
