@@ -48,6 +48,12 @@ private struct SimpleCollectionViewBond<DataSource: DataSourceProtocol>: Collect
     }
 }
 
+public extension ReactiveExtensions where Base: UICollectionViewCell {
+    public var isSelected: DynamicSubject<Bool> {
+        return keyPath("selected", ofType: Bool.self)
+    }
+}
+    
 public extension ReactiveExtensions where Base: UICollectionView {
 
     public var delegate: ProtocolProxy {
