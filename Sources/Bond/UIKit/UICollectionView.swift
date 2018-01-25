@@ -36,7 +36,7 @@ public protocol CollectionViewBondDelegate {
     associatedtype DataSource: DataSourceProtocol
     
     func sizeForRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
-    
+    func didSelectRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource)
 }
 
 private struct SimpleCollectionViewBond<DataSource: DataSourceProtocol>: CollectionViewBond {
@@ -92,6 +92,15 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
             map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, indexPath: IndexPath) -> CGSize in
                 return delegate.sizeForRow(at: indexPath as IndexPath, collectionView: collectionView, dataSource: dataSource!)
         })
+        
+        disposable += collectionView.reactive.delegate.feed(
+            property: dataSource,
+            to: #selector(UICollectionViewDelegate.collectionView(_:didSelectItemAt:)),
+            map: { (dataSource: DataSource?, collectionView: UICollectionView, indexPath: IndexPath) in
+                return delegate.didSelectRow(at: indexPath as IndexPath, collectionView: collectionView, dataSource: dataSource!)
+        })
+        
+        
         return disposable
     }
     
