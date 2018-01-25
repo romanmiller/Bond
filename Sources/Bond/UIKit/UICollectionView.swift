@@ -68,17 +68,17 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
     
     
     @discardableResult
-    public func bind<B: CollectionViewBond>(to collectionView: UICollectionView, using bond: B) -> Disposable where B.DataSource == DataSource, B:CollectionViewBondDelegate {
+    public func bind2<B: CollectionViewBond>(to collectionView: UICollectionView, using bond: B) -> Disposable where B.DataSource == DataSource, B:CollectionViewBondDelegate {
         let disposable = CompositeDisposable()
-        disposable += bind(to: collectionView, using: bond)
-        disposable += bind(to: collectionView, with: bond)
+        let dataSource = Property<DataSource?>(nil)
+        disposable += _bind(to: collectionView, using: bond, and: dataSource)
+        disposable += _bound(with: collectionView, to: bond, and: dataSource)
         return disposable
     }
     
     @discardableResult
-    public func bind<D:CollectionViewBondDelegate>(to collectionView: UICollectionView, with delegate:D) -> Disposable where D.DataSource == DataSource {
+    private func _bound<D:CollectionViewBondDelegate>(with collectionView: UICollectionView, to delegate:D, and dataSource: Property<DataSource?>) -> Disposable where D.DataSource == DataSource {
         
-        let dataSource = Property<DataSource?>(nil)
         let disposable = CompositeDisposable()
         disposable += collectionView.reactive.delegate.feed(
             property: dataSource,
@@ -91,35 +91,39 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
     
     @discardableResult
     public func bind<B: CollectionViewBond>(to collectionView: UICollectionView, using bond: B) -> Disposable where B.DataSource == DataSource {
-
         let dataSource = Property<DataSource?>(nil)
+        return _bind(to: collectionView, using: bond, and: dataSource)
+        
+    }
+    private func _bind<B: CollectionViewBond>(to collectionView: UICollectionView, using bond: B, and dataSource: Property<DataSource?>) -> Disposable where B.DataSource == DataSource {
+        
         let disposable = CompositeDisposable()
-
+        
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.collectionView(_:cellForItemAt:)),
             map: { (dataSource: DataSource?, collectionView: UICollectionView, indexPath: NSIndexPath) -> UICollectionViewCell in
                 return bond.cellForRow(at: indexPath as IndexPath, collectionView: collectionView, dataSource: dataSource!)
-            }
+        }
         )
-
+        
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.collectionView(_:numberOfItemsInSection:)),
             map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in dataSource?.numberOfItems(inSection: section) ?? 0 }
         )
-
+        
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.numberOfSections(in:)),
             map: { (dataSource: DataSource?, _: UICollectionView) -> Int in dataSource?.numberOfSections ?? 0 }
         )
-
+        
         var bufferedEvents: [DataSourceEventKind]? = nil
-
+        
         disposable += bind(to: collectionView) { collectionView, event in
             dataSource.value = event.dataSource
-
+            
             let applyEventOfKind: (DataSourceEventKind) -> () = { kind in
                 switch kind {
                 case .reload:
@@ -146,7 +150,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                     fatalError()
                 }
             }
-
+            
             switch event.kind {
             case .reload:
                 collectionView.reloadData()
@@ -167,7 +171,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 }
             }
         }
-
+        
         return disposable
     }
 }
