@@ -17,46 +17,57 @@ class TestTableView: UITableView {
     var observedEvents: [DataSourceEventKind] = []
 
     open override func reloadData() {
+        super.reloadData()
         observedEvents.append(.reload)
     }
 
     open override func beginUpdates() {
+        super.beginUpdates()
         observedEvents.append(.beginUpdates)
     }
 
     open override func endUpdates() {
+        super.endUpdates()
         observedEvents.append(.endUpdates)
     }
 
     open override func insertSections(_ sections: IndexSet, with animation: UITableViewRowAnimation) {
+        super.insertSections(sections, with: animation)
         observedEvents.append(.insertSections(sections))
     }
 
     open override func deleteSections(_ sections: IndexSet, with animation: UITableViewRowAnimation) {
+        super.deleteSections(sections, with: animation)
         observedEvents.append(.deleteSections(sections))
     }
 
     open override func reloadSections(_ sections: IndexSet, with animation: UITableViewRowAnimation) {
+        super.reloadSections(sections, with: animation)
         observedEvents.append(.reloadSections(sections))
     }
 
     open override func moveSection(_ section: Int, toSection newSection: Int) {
+        super.moveSection(section, toSection: newSection)
         observedEvents.append(.moveSection(section, newSection))
     }
 
     open override func insertRows(at indexPaths: [IndexPath], with animation: UITableViewRowAnimation) {
+        super.insertRows(at: indexPaths, with: animation)
         observedEvents.append(.insertItems(indexPaths))
     }
 
     open override func deleteRows(at indexPaths: [IndexPath], with animation: UITableViewRowAnimation) {
+        super.deleteRows(at: indexPaths, with: animation)
         observedEvents.append(.deleteItems(indexPaths))
     }
 
     open override func reloadRows(at indexPaths: [IndexPath], with animation: UITableViewRowAnimation) {
+        super.reloadRows(at: indexPaths, with: animation)
         observedEvents.append(.reloadItems(indexPaths))
     }
 
     open override func moveRow(at indexPath: IndexPath, to newIndexPath: IndexPath) {
+        super.moveRow(at: indexPath, to: newIndexPath)
         observedEvents.append(.moveItem(indexPath, newIndexPath))
     }
 }
