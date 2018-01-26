@@ -137,7 +137,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
         var bufferedEvents: [DataSourceEventKind]? = nil
         
         disposable += bind(to: collectionView) { collectionView, event in
-            dataSource.value = event.dataSource
+            
             
             let applyEventOfKind: (DataSourceEventKind) -> () = { kind in
                 switch kind {
@@ -168,12 +168,15 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
             
             switch event.kind {
             case .reload:
+                dataSource.value = event.dataSource
                 collectionView.reloadData()
             case .beginUpdates:
                 bufferedEvents = []
             case .endUpdates:
+                
                 if let bufferedEvents = bufferedEvents {
-                    collectionView.performBatchUpdates({ bufferedEvents.forEach(applyEventOfKind) }, completion: nil)
+                    collectionView.performBatchUpdates({dataSource.value = event.dataSource; bufferedEvents.forEach(applyEventOfKind) }, completion: nil)
+                    
                 } else {
                     fatalError("Bond: Unexpected event .endUpdates. Should have been preceded by a .beginUpdates event.")
                 }
@@ -182,7 +185,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 if bufferedEvents != nil {
                     bufferedEvents!.append(event.kind)
                 } else {
-                    applyEventOfKind(event.kind)
+                    collectionView.performBatchUpdates({dataSource.value = event.dataSource; applyEventOfKind(event.kind) }, completion: nil)
                 }
             }
         }
