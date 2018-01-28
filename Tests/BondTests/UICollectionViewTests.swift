@@ -25,7 +25,6 @@ class TestCollectionView: UICollectionView {
         observedEvents.append(.beginUpdates)
         super.performBatchUpdates(updates)
         observedEvents.append(.endUpdates)
-
     }
 
     override func insertSections(_ sections: IndexSet) {
@@ -78,20 +77,25 @@ class UICollectionViewTests: XCTestCase {
     override func setUp() {
         array = MutableObservableArray([1, 2, 3])
         collectionView = TestCollectionView(frame: CGRect(x: 0, y: 0, width: 1000, height: 1000), collectionViewLayout: UICollectionViewFlowLayout())
+        
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        collectionView.contentSize = CGSize(width: 1000, height: 1000)
         array.bind(to: collectionView) { (array, indexPath, collectionView) -> UICollectionViewCell in
             return collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
         }
+        print (collectionView.contentSize)
+        print (collectionView.indexPathsForVisibleItems)
+        //collectionView.cellForItem(at: IndexPath(row: 0, section: 0))
     }
 
     func testInsertRows() {
+        
+
         array.insert(4, at: 1)
         print (collectionView.observedEvents)
         XCTAssert(collectionView.observedEvents == [
             .reload,
-            .beginUpdates,
             .insertItems([IndexPath(row: 1, section: 0)]),
-            .endUpdates
             ]
         )
     }
@@ -100,9 +104,7 @@ class UICollectionViewTests: XCTestCase {
         let _ = array.remove(at: 2)
         XCTAssert(collectionView.observedEvents == [
             .reload,
-            .beginUpdates,
             .deleteItems([IndexPath(row: 2, section: 0)]),
-            .endUpdates,
             ]
         )
     }
@@ -111,7 +113,7 @@ class UICollectionViewTests: XCTestCase {
         array[2] = 5
         XCTAssert(collectionView.observedEvents == [
             .reload,
-            .reloadItems([IndexPath(row: 2, section: 0)])
+            .reloadItems([IndexPath(row: 2, section: 0)]),
             ]
         )
     }
@@ -120,20 +122,22 @@ class UICollectionViewTests: XCTestCase {
         array.moveItem(from: 1, to: 2)
         XCTAssert(collectionView.observedEvents == [
             .reload,
-            .moveItem(IndexPath(row: 1, section: 0), IndexPath(row: 2, section: 0))
+            .moveItem(IndexPath(row: 1, section: 0), IndexPath(row: 2, section: 0)),
             ]
         )
     }
 
     func testBatchUpdates() {
         array.batchUpdate { (array) in
-            array.moveItem(from: 1, to: 2)
+            array.insert(0, at: 0)
+            array.insert(1, at: 0)
+            array.insert(3, at: 0)
         }
 
         XCTAssert(collectionView.observedEvents == [
             .reload,
             .beginUpdates,
-            .moveItem(IndexPath(row: 1, section: 0), IndexPath(row: 2, section: 0)),
+            .insertItems([IndexPath(row: 0, section: 0)]),
             .endUpdates
             ]
         )

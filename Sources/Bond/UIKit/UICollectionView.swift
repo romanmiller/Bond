@@ -125,13 +125,22 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.collectionView(_:numberOfItemsInSection:)),
-            map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in dataSource?.numberOfItems(inSection: section) ?? 0 }
+            map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in
+                let res = dataSource?.numberOfItems(inSection: section) ?? 0
+                print("numberOfItemsInSection", res)
+                return res
+                
+        }
         )
         
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.numberOfSections(in:)),
-            map: { (dataSource: DataSource?, _: UICollectionView) -> Int in dataSource?.numberOfSections ?? 0 }
+            map: { (dataSource: DataSource?, _: UICollectionView) -> Int in
+                let res = dataSource?.numberOfSections ?? 0
+                print("numberOfSections", res)
+                return res
+        }
         )
         
         var bufferedEvents: [DataSourceEventKind]? = nil
@@ -175,7 +184,8 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
             case .endUpdates:
                 
                 if let bufferedEvents = bufferedEvents {
-                    collectionView.performBatchUpdates({dataSource.value = event.dataSource; bufferedEvents.forEach(applyEventOfKind) }, completion: nil)
+                    dataSource.value = event.dataSource;
+                    collectionView.performBatchUpdates({ bufferedEvents.forEach(applyEventOfKind) }, completion: nil)
                     
                 } else {
                     fatalError("Bond: Unexpected event .endUpdates. Should have been preceded by a .beginUpdates event.")
@@ -185,7 +195,9 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 if bufferedEvents != nil {
                     bufferedEvents!.append(event.kind)
                 } else {
-                    collectionView.performBatchUpdates({dataSource.value = event.dataSource; applyEventOfKind(event.kind) }, completion: nil)
+                    dataSource.value = event.dataSource
+                    applyEventOfKind(event.kind)
+                    //collectionView.performBatchUpdates({;  }, completion: nil)
                 }
             }
         }
