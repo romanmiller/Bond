@@ -64,7 +64,10 @@ public extension ReactiveExtensions where Base: UICollectionView {
         return protocolProxy(for: UICollectionViewDataSource.self, keyPath: \.dataSource)
     }
 }
-
+    func printRes<T>(_ pref:String, _ t:T)->T{
+        print(pref, t)
+        return t
+    }
 public extension SignalProtocol where Element: DataSourceEventProtocol, Element.BatchKind == BatchKindDiff, Error == NoError {
 
     @discardableResult
@@ -125,33 +128,22 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.collectionView(_:numberOfItemsInSection:)),
-            map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in
-                let res = dataSource?.numberOfItems(inSection: section) ?? 0
-                print("numberOfItemsInSection", res)
-                return res
-                
-        }
-        )
+            map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in printRes("numberOfItemsInSection", dataSource?.numberOfItems(inSection: section) ?? 0) } )
         
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.numberOfSections(in:)),
-            map: { (dataSource: DataSource?, _: UICollectionView) -> Int in
-                let res = dataSource?.numberOfSections ?? 0
-                print("numberOfSections", res)
-                return res
-        }
-        )
+            map: { (dataSource: DataSource?, _: UICollectionView) -> Int in printRes("numberOfSections", dataSource?.numberOfSections ?? 0) })
         
         var bufferedEvents: [DataSourceEventKind]? = nil
         
         disposable += bind(to: collectionView) { collectionView, event in
             
-            
             let applyEventOfKind: (DataSourceEventKind) -> () = { kind in
                 switch kind {
                 case .reload:
                     collectionView.reloadData()
+                    _  = collectionView.numberOfSections // this hack forces collectionView really reload data.
                 case .insertItems(let indexPaths):
                     collectionView.insertItems(at: indexPaths)
                 case .deleteItems(let indexPaths):
@@ -174,19 +166,14 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                     fatalError()
                 }
             }
-            
+            dataSource.value = event.dataSource;
             switch event.kind {
-//            case .reload:
-//                dataSource.value = event.dataSource
-//                collectionView.reloadData()
             case .beginUpdates:
                 bufferedEvents = []
             case .endUpdates:
                 
                 if let bufferedEvents = bufferedEvents {
-                    dataSource.value = event.dataSource;
                     collectionView.performBatchUpdates({ bufferedEvents.forEach(applyEventOfKind) }, completion: nil)
-                    
                 } else {
                     fatalError("Bond: Unexpected event .endUpdates. Should have been preceded by a .beginUpdates event.")
                 }
@@ -195,9 +182,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 if bufferedEvents != nil {
                     bufferedEvents!.append(event.kind)
                 } else {
-                    dataSource.value = event.dataSource
                     applyEventOfKind(event.kind)
-                    //collectionView.performBatchUpdates({;  }, completion: nil)
                 }
             }
         }

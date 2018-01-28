@@ -83,7 +83,7 @@ class UICollectionViewTests: XCTestCase {
         array.bind(to: collectionView) { (array, indexPath, collectionView) -> UICollectionViewCell in
             return collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
         }
-        _ = collectionView.numberOfSections
+        //_ = collectionView.numberOfSections
     }
 
     func testInsertRows() {
@@ -107,6 +107,16 @@ class UICollectionViewTests: XCTestCase {
         )
     }
 
+    
+    func testReload() {
+       collectionView.reloadData()
+        XCTAssert(collectionView.observedEvents == [
+            .reload,
+            .reload,
+            ]
+        )
+    }
+    
     func testReloadRows() {
         array[2] = 5
         XCTAssert(collectionView.observedEvents == [
@@ -135,6 +145,8 @@ class UICollectionViewTests: XCTestCase {
         XCTAssert(collectionView.observedEvents == [
             .reload,
             .beginUpdates,
+            .insertItems([IndexPath(row: 2, section: 0)]),
+            .insertItems([IndexPath(row: 1, section: 0)]),
             .insertItems([IndexPath(row: 0, section: 0)]),
             .endUpdates
             ]
