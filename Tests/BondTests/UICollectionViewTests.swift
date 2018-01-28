@@ -83,9 +83,7 @@ class UICollectionViewTests: XCTestCase {
         array.bind(to: collectionView) { (array, indexPath, collectionView) -> UICollectionViewCell in
             return collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
         }
-        print (collectionView.contentSize)
-        print (collectionView.indexPathsForVisibleItems)
-        //collectionView.cellForItem(at: IndexPath(row: 0, section: 0))
+        _ = collectionView.numberOfSections
     }
 
     func testInsertRows() {

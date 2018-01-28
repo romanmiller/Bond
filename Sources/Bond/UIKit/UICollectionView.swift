@@ -176,9 +176,9 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
             }
             
             switch event.kind {
-            case .reload:
-                dataSource.value = event.dataSource
-                collectionView.reloadData()
+//            case .reload:
+//                dataSource.value = event.dataSource
+//                collectionView.reloadData()
             case .beginUpdates:
                 bufferedEvents = []
             case .endUpdates:
