@@ -64,10 +64,6 @@ public extension ReactiveExtensions where Base: UICollectionView {
         return protocolProxy(for: UICollectionViewDataSource.self, keyPath: \.dataSource)
     }
 }
-    func printRes<T>(_ pref:String, _ t:T)->T{
-        print(pref, t)
-        return t
-    }
 public extension SignalProtocol where Element: DataSourceEventProtocol, Element.BatchKind == BatchKindDiff, Error == NoError {
 
     @discardableResult
@@ -128,12 +124,12 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.collectionView(_:numberOfItemsInSection:)),
-            map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in printRes("numberOfItemsInSection", dataSource?.numberOfItems(inSection: section) ?? 0) } )
+            map: { (dataSource: DataSource?, _: UICollectionView, section: Int) -> Int in  dataSource?.numberOfItems(inSection: section) ?? 0 } )
         
         disposable += collectionView.reactive.dataSource.feed(
             property: dataSource,
             to: #selector(UICollectionViewDataSource.numberOfSections(in:)),
-            map: { (dataSource: DataSource?, _: UICollectionView) -> Int in printRes("numberOfSections", dataSource?.numberOfSections ?? 0) })
+            map: { (dataSource: DataSource?, _: UICollectionView) -> Int in  dataSource?.numberOfSections ?? 0 })
         
         var bufferedEvents: [DataSourceEventKind]? = nil
         
