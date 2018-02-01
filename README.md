@@ -202,7 +202,7 @@ The only requirement is that the target must be "deallocatable", in other words 
 
 ```swift
 public protocol Deallocatable: class {
-  var deallocated: Signal<Void, NoError> { get }
+  var deallocated: Signal<Void> { get }
 }
 ```
 
@@ -221,7 +221,7 @@ extension ReactiveExtensions where Base: UILabel {
 That's it! To bind any string signal, just use `bind(to:)` method on that bond.
 
 ```swift
-let name: Signal<String, NoError> = ...
+let name: Signal<String> = ...
 name.bind(to: nameLabel.reactive.myTextBond)
 ```
 
@@ -243,7 +243,7 @@ then the image processing will be automatically cancelled when the image view ge
 Most of the time you should be able to replace an observation with a binding. Consider the following example. Say we have a signal of users
 
 ```swift
-let presentUserProfile: Signal<User, NoError> = ...
+let presentUserProfile: Signal<User> = ...
 ```
 
 and we would like to present a profile screen when a user is sent on the signal. Usually we would do something like:
@@ -290,7 +290,7 @@ You can then convert methods of that protocol into signals:
 ```swift
 extension ReactiveExtensions where Base: UITableView {
 
-    var selectedRow: Signal<Int, NoError> {
+    var selectedRow: Signal<Int> {
         return delegate.signal(for: #selector(UITableViewDelegate.tableView(_:didSelectRowAt:))) { (subject: SafePublishSubject<Int>, _: UITableView, indexPath: IndexPath) in
             subject.next(indexPath.row)
         }

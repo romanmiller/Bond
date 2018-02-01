@@ -112,7 +112,7 @@ public extension ReactiveExtensions where Base: NSTextField {
 
 extension NSTextField {
 
-    public func bind(signal: Signal<String, NoError>) -> Disposable {
+    public func bind(signal: Signal<String>) -> Disposable {
         return reactive.stringValue.bind(signal: signal)
     }
 }

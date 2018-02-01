@@ -40,7 +40,7 @@ public extension ReactiveExtensions where Base: UIDatePicker {
 
 extension UIDatePicker: BindableProtocol {
 
-    public func bind(signal: Signal<Date, NoError>) -> Disposable {
+    public func bind(signal: Signal<Date>) -> Disposable {
         return reactive.date.bind(signal: signal)
     }
 }

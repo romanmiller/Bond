@@ -110,7 +110,7 @@ extension Array: DataSourceProtocol {
 //    }
 //}
 
-extension SignalProtocol where Element: DataSourceProtocol, Error == NoError {
+extension SignalProtocol where Element: DataSourceProtocol {
 
     public func mapToDataSourceEvent() -> SafeSignal<DataSourceEvent<Element, BatchKindDiff>> {
         return map { collection in DataSourceEvent(kind: .reload, dataSource: collection) }

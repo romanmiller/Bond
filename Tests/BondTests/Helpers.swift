@@ -15,7 +15,7 @@ func XCTAssertEqual(_ lhs: CGFloat, _ rhs: CGFloat, precision: CGFloat = 0.01, f
 }
 extension Event {
 
-    func isEqualTo(_ event: Event<Element, Error>) -> Bool {
+    func isEqualTo(_ event: Event<Element>) -> Bool {
 
         switch (self, event) {
         case (.completed, .completed):
@@ -78,12 +78,12 @@ extension SignalProtocol {
         expect(expectedElements.map { .next($0) } + [.completed], message, expectation: expectation, file: file, line: line)
     }
 
-    func expect(_ expectedEvents: [Event<Element, Error>],
+    func expect(_ expectedEvents: [Event<Element>],
                 _ message: @autoclosure () -> String = "",
                 expectation: XCTestExpectation? = nil,
                 file: StaticString = #file, line: UInt = #line) {
         var eventsToProcess = expectedEvents
-        var receivedEvents: [Event<Element, Error>] = []
+        var receivedEvents: [Event<Element>] = []
         let message = message()
         let _ = observe { event in
             receivedEvents.append(event)

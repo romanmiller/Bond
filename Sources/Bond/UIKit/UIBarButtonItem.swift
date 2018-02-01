@@ -36,7 +36,7 @@ extension UIBarButtonItem {
     @objc fileprivate class BondTarget: NSObject
     {
         weak var barButtonItem: UIBarButtonItem?
-        let subject = PublishSubject<Void, NoError>()
+        let subject = PublishSubject<Void>()
 
         init(barButtonItem: UIBarButtonItem) {
             self.barButtonItem = barButtonItem

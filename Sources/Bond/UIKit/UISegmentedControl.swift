@@ -40,7 +40,7 @@ public extension ReactiveExtensions where Base: UISegmentedControl {
 
 extension UISegmentedControl: BindableProtocol {
 
-    public func bind(signal: Signal<Int, NoError>) -> Disposable {
+    public func bind(signal: Signal<Int>) -> Disposable {
         return reactive.selectedSegmentIndex.bind(signal: signal)
     }
 }

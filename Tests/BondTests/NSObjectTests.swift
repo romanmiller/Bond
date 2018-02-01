@@ -58,40 +58,40 @@ class NSObjectKVOTests: XCTestCase {
         object = TestObject()
     }
 
-    func testObservation() {
-        let subject = object.reactive.keyPath("property", ofType: String.self)
-        subject.expectNext(["a", "b", "c"])
-        object.property = "b"
-        object.property = "c"
-    }
-
-    func testBinding() {
-        let subject = object.reactive.keyPath("property", ofType: String.self)
-        subject.expectNext(["a", "b", "c"])
-        SafeSignal.just("b").bind(to: subject)
-        XCTAssert((object.property as! String) == "b")
-        SafeSignal.just("c").bind(to: subject)
-        XCTAssert((object.property as! String) == "c")
-    }
-
-    func testOptionalObservation() {
-        let subject = object.reactive.keyPath("property", ofType: Optional<String>.self)
-        subject.expectNext(["a", "b", nil, "c"])
-        object.property = "b"
-        object.property = nil
-        object.property = "c"
-    }
-
-    func testOptionalBinding() {
-        let subject = object.reactive.keyPath("property", ofType: Optional<String>.self)
-        subject.expectNext(["a", "b", nil, "c"])
-        SafeSignal.just("b").bind(to: subject)
-        XCTAssert((object.property as! String) == "b")
-        SafeSignal.just(nil).bind(to: subject)
-        XCTAssert(object.property == nil)
-        SafeSignal.just("c").bind(to: subject)
-        XCTAssert((object.property as! String) == "c")
-    }
+//    func testObservation() {
+//        let subject = object.reactive.keyPath("property", ofType: String.self)
+//        subject.expectNext(["a", "b", "c"])
+//        object.property = "b"
+//        object.property = "c"
+//    }
+//
+//    func testBinding() {
+//        let subject = object.reactive.keyPath("property", ofType: String.self)
+//        subject.expectNext(["a", "b", "c"])
+//        SafeSignal.just("b").bind(to: subject)
+//        XCTAssert((object.property as! String) == "b")
+//        SafeSignal.just("c").bind(to: subject)
+//        XCTAssert((object.property as! String) == "c")
+//    }
+//
+//    func testOptionalObservation() {
+//        let subject = object.reactive.keyPath("property", ofType: Optional<String>.self)
+//        subject.expectNext(["a", "b", nil, "c"])
+//        object.property = "b"
+//        object.property = nil
+//        object.property = "c"
+//    }
+//
+//    func testOptionalBinding() {
+//        let subject = object.reactive.keyPath("property", ofType: Optional<String>.self)
+//        subject.expectNext(["a", "b", nil, "c"])
+//        SafeSignal.just("b").bind(to: subject)
+//        XCTAssert((object.property as! String) == "b")
+//        SafeSignal.just(nil).bind(to: subject)
+//        XCTAssert(object.property == nil)
+//        SafeSignal.just("c").bind(to: subject)
+//        XCTAssert((object.property as! String) == "c")
+//    }
 
     func testExpectedTypeObservation() {
         let subject = object.reactive.keyPath("property", ofExpectedType: String.self)
@@ -111,7 +111,7 @@ class NSObjectKVOTests: XCTestCase {
 
     func testExpectedTypeFailure() {
         let subject = object.reactive.keyPath("property", ofExpectedType: String.self)
-        subject.expect([.next("a"), .failed(.notConvertible(""))])
+        subject.expect([.next("a"), .failed(NSObject.KVOError.notConvertible(""))])
         object.property = 5
     }
 
@@ -136,7 +136,7 @@ class NSObjectKVOTests: XCTestCase {
 
     func testExpectedTypeOptionalFailure() {
         let subject = object.reactive.keyPath("property", ofExpectedType: Optional<String>.self)
-        subject.expect([.next("a"), .failed(.notConvertible(""))])
+        subject.expect([.next("a"), .failed(NSObject.KVOError.notConvertible(""))])
         object.property = 5
     }
 

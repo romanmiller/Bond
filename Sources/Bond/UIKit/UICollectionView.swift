@@ -52,7 +52,7 @@ public extension ReactiveExtensions where Base: UICollectionView {
     }
 }
 
-public extension SignalProtocol where Element: DataSourceEventProtocol, Element.BatchKind == BatchKindDiff, Error == NoError {
+public extension SignalProtocol where Element: DataSourceEventProtocol, Element.BatchKind == BatchKindDiff {
 
     @discardableResult
     public func bind(to collectionView: UICollectionView, createCell: @escaping (DataSource, IndexPath, UICollectionView) -> UICollectionViewCell) -> Disposable {

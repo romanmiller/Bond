@@ -69,7 +69,7 @@ open class ObservableArrayBase<Item>: SignalProtocol {
             fatalError("Don't use this class")
         }
     }
-    public let subject = PublishSubject<ObservableArrayEvent<Item>, NoError>()
+    public let subject = PublishSubject<ObservableArrayEvent<Item>>()
     
     public init() {
         
@@ -109,7 +109,7 @@ open class ObservableArrayBase<Item>: SignalProtocol {
         }
     }
 
-    public func observe(with observer: @escaping (Event<ObservableArrayEvent<Item>, NoError>) -> Void) -> Disposable {
+    public func observe(with observer: @escaping (Event<ObservableArrayEvent<Item>>) -> Void) -> Disposable {
         observer(.next(ObservableArrayEvent(change: .reset, source: array)))
         return subject.observe(with: observer)
     }
@@ -140,7 +140,7 @@ extension ObservableArrayBase: CustomDebugStringConvertible {
 
 extension ObservableArrayBase: Deallocatable {
 
-    public var deallocated: Signal<Void, NoError> {
+    public var deallocated: Signal<Void> {
         return subject.disposeBag.deallocated
     }
 }
@@ -261,7 +261,7 @@ public class MutableObservableArray<Item>: ObservableArray<Item> {
 
 extension MutableObservableArray: BindableProtocol {
 
-    public func bind(signal: Signal<ObservableArrayEvent<Item>, NoError>) -> Disposable {
+    public func bind(signal: Signal<ObservableArrayEvent<Item>>) -> Disposable {
         return signal
             .take(until: deallocated)
             .observeNext { [weak self] event in
@@ -383,7 +383,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
 
     /// Map underlying ObservableArray.
     /// Complexity of mapping on each event is O(n).
-    public func map<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>, Error> {
+    public func map<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>> {
         return map { (event: Element) -> ObservableArrayEvent<U> in
             let mappedArray = event.source.map(transform)
             return ObservableArrayEvent<U>(change: event.change, source: mappedArray)
@@ -392,7 +392,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
 
     /// Laziliy map underlying ObservableArray.
     /// Complexity of mapping on each event (change) is O(1).
-    public func lazyMap<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>, Error> {
+    public func lazyMap<U>(_ transform: @escaping (Item) -> U) -> Signal<ObservableArrayEvent<U>> {
         return map { (event: Element) -> ObservableArrayEvent<U> in
             return ObservableArrayEvent<U>(change: event.change, source: event.source.lazy.map(transform))
         }
@@ -400,7 +400,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
 
     /// Filter underlying ObservableArrays.
     /// Complexity of filtering on each event is O(n).
-    public func filter(_ isIncluded: @escaping (Item) -> Bool) -> Signal<ObservableArrayEvent<Item>, Error> {
+    public func filter(_ isIncluded: @escaping (Item) -> Bool) -> Signal<ObservableArrayEvent<Item>> {
         var isBatching = false
         var previousIndexMap: [Int: Int] = [:]
         return map { (event: Element) -> [ObservableArrayEvent<Item>] in
@@ -480,7 +480,7 @@ extension SignalProtocol where Element: Collection, Element.Iterator.Element: Eq
 
     // Diff each emitted collection with the previously emitted one.
     // Returns a signal of ObservableArrayEvents that can be bound to a table or collection view.
-    public func diff() -> Signal<ObservableArrayEvent<Element.Iterator.Element>, Error> {
+    public func diff() -> Signal<ObservableArrayEvent<Element.Iterator.Element>> {
         return Signal { observer in
             var previous: MutableObservableArray<Element.Iterator.Element>? = nil
             return self.observe { event in
@@ -508,7 +508,7 @@ extension SignalProtocol where Element: Collection, Element.Iterator.Element: Eq
 fileprivate extension SignalProtocol where Element: Sequence {
 
     /// Unwrap sequence elements into signal elements.
-    fileprivate func _unwrap() -> Signal<Element.Iterator.Element, Error> {
+    fileprivate func _unwrap() -> Signal<Element.Iterator.Element> {
         return Signal { observer in
             return self.observe { event in
                 switch event {
@@ -728,7 +728,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
     /// Converts diff events into patch events by transforming batch updates into resets (i.e. disabling batch updates).
     /// - If you wish to keep batch updated, make your array element type conforming to Equatable protocol and use
     ///             `patchingBatch` method instead.
-    public func toPatchesByResettingBatch() -> Signal<ObservableArrayPatchEvent<Item>, Error> {
+    public func toPatchesByResettingBatch() -> Signal<ObservableArrayPatchEvent<Item>> {
 
         var isBatching = false
 
@@ -764,7 +764,7 @@ public extension SignalProtocol where Element: ObservableArrayEventProtocol {
 public extension SignalProtocol where Element: ObservableArrayEventProtocol, Element.Item: Equatable {
 
     /// Converts diff events into patch events.
-    public func toPatches() -> Signal<ObservableArrayPatchEvent<Item>, Error> {
+    public func toPatches() -> Signal<ObservableArrayPatchEvent<Item>> {
 
         var isBatching = false
         var originalArray: [Item] = []

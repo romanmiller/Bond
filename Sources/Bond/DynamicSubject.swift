@@ -25,22 +25,22 @@
 import ReactiveKit
 import Foundation
 
-public typealias DynamicSubject<Element> = DynamicSubject2<Element, NoError>
+public typealias DynamicSubject<Element> = DynamicSubject2<Element>
 
-public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, BindableProtocol {
+public struct DynamicSubject2<Element>: SubjectProtocol, BindableProtocol {
 
     private weak var target: AnyObject?
-    private var signal: Signal<Void, Error>
+    private var signal: Signal<Void>
     private let context: ExecutionContext
-    private let getter: (AnyObject) -> Result<Element, Error>
+    private let getter: (AnyObject) -> Result<Element>
     private let setter: (AnyObject, Element) -> Void
-    private let subject = PublishSubject<Void, Error>()
+    private let subject = PublishSubject<Void>()
     private let triggerEventOnSetting: Bool
 
     public init<Target: Deallocatable>(target: Target,
-                                       signal: Signal<Void, Error>,
+                                       signal: Signal<Void>,
                                        context: ExecutionContext,
-                                       get: @escaping (Target) -> Result<Element, Error>,
+                                       get: @escaping (Target) -> Result<Element>,
                                        set: @escaping (Target, Element) -> Void,
                                        triggerEventOnSetting: Bool = true) {
         self.target = target
@@ -52,7 +52,7 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
     }
 
     public init<Target: Deallocatable>(target: Target,
-                                       signal: Signal<Void, Error>,
+                                       signal: Signal<Void>,
                                        context: ExecutionContext,
                                        get: @escaping (Target) -> Element,
                                        set: @escaping (Target, Element) -> Void,
@@ -66,9 +66,9 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
     }
 
     private init(_target: AnyObject,
-                 signal: Signal<Void, Error>,
+                 signal: Signal<Void>,
                  context: ExecutionContext,
-                 get: @escaping (AnyObject) -> Result<Element, Error>,
+                 get: @escaping (AnyObject) -> Result<Element>,
                  set: @escaping (AnyObject, Element) -> Void,
                  triggerEventOnSetting: Bool = true) {
         self.target = _target
@@ -79,7 +79,7 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
         self.triggerEventOnSetting = triggerEventOnSetting
     }
 
-    public func on(_ event: Event<Element, Error>) {
+    public func on(_ event: Event<Element>) {
         if case .next(let element) = event, let target = target {
             setter(target, element)
             if triggerEventOnSetting {
@@ -88,10 +88,10 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
         }
     }
 
-    public func observe(with observer: @escaping (Event<Element, Error>) -> Void) -> Disposable {
+    public func observe(with observer: @escaping (Event<Element>) -> Void) -> Disposable {
         guard let target = target else { observer(.completed); return NonDisposable.instance }
         let getter = self.getter
-        return signal.start(with: ()).merge(with: subject).tryMap { [weak target] () -> Result<Element?, Error> in
+        return signal.start(with: ()).merge(with: subject).tryMap { [weak target] () -> Result<Element?> in
             if let target = target {
                 switch getter(target) {
                 case .success(let element):
@@ -105,7 +105,7 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
         }.ignoreNil().take(until: (target as! Deallocatable).deallocated).observe(with: observer)
     }
 
-    public func bind(signal: Signal<Element, NoError>) -> Disposable {
+    public func bind(signal: Signal<Element>) -> Disposable {
         if let target = target {
             let setter = self.setter
             let subject = self.subject
@@ -146,14 +146,14 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
 
     /// Transform the `getter` and `setter` by applying a `transform` on them.
     public func bidirectionalMap<U>(to getTransform: @escaping (Element) -> U,
-                                    from setTransform: @escaping (U) -> Element) -> DynamicSubject2<U, Error>! {
+                                    from setTransform: @escaping (U) -> Element) -> DynamicSubject2<U>! {
         guard let target = target else { return nil }
 
-        return DynamicSubject2<U, Error>(
+        return DynamicSubject2<U>(
             _target: target,
             signal: signal,
             context: context,
-            get: { [getter] (target) -> Result<U, Error> in
+            get: { [getter] (target) -> Result<U> in
                 switch getter(target) {
                 case .success(let value):
                     return .success(getTransform(value))
@@ -170,7 +170,7 @@ public struct DynamicSubject2<Element, Error: Swift.Error>: SubjectProtocol, Bin
 
 extension ReactiveExtensions where Base: Deallocatable {
 
-    public func dynamicSubject<Element>(signal: Signal<Void, NoError>,
+    public func dynamicSubject<Element>(signal: Signal<Void>,
                                         context: ExecutionContext,
                                         triggerEventOnSetting: Bool = true,
                                         get: @escaping (Base) -> Element,
@@ -181,7 +181,7 @@ extension ReactiveExtensions where Base: Deallocatable {
 
 extension ReactiveExtensions where Base: Deallocatable, Base: BindingExecutionContextProvider {
 
-    public func dynamicSubject<Element>(signal: Signal<Void, NoError>,
+    public func dynamicSubject<Element>(signal: Signal<Void>,
                                         triggerEventOnSetting: Bool = true,
                                         get: @escaping (Base) -> Element,
                                         set: @escaping (Base, Element) -> Void) -> DynamicSubject<Element> {

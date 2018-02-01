@@ -108,7 +108,7 @@ private struct ReloadingTableViewBond<DataSource: DataSourceProtocol>: TableView
     }
 }
 
-public extension SignalProtocol where Element: DataSourceEventProtocol, Element.BatchKind == BatchKindDiff, Error == NoError {
+public extension SignalProtocol where Element: DataSourceEventProtocol, Element.BatchKind == BatchKindDiff {
 
     public typealias DataSource = Element.DataSource
 
