@@ -161,14 +161,14 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                     fatalError()
                 }
             }
-            dataSource.value = event.dataSource;
+          
             switch event.kind {
             case .beginUpdates:
                 bufferedEvents = []
             case .endUpdates:
                 
                 if let bufferedEvents = bufferedEvents {
-                    collectionView.performBatchUpdates({ bufferedEvents.forEach(applyEventOfKind) }, completion: nil)
+                    collectionView.performBatchUpdates({ bufferedEvents.forEach(applyEventOfKind); dataSource.value = event.dataSource; }, completion: nil)
                 } else {
                     fatalError("Bond: Unexpected event .endUpdates. Should have been preceded by a .beginUpdates event.")
                 }
@@ -177,6 +177,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 if bufferedEvents != nil {
                     bufferedEvents!.append(event.kind)
                 } else {
+                    dataSource.value = event.dataSource;
                     applyEventOfKind(event.kind)
                 }
             }

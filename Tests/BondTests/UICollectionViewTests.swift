@@ -81,6 +81,10 @@ class UICollectionViewTests: XCTestCase {
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
         collectionView.contentSize = CGSize(width: 1000, height: 1000)
         array.bind(to: collectionView) { (array, indexPath, collectionView) -> UICollectionViewCell in
+            print ("cellForItem: ", indexPath.row, array.count)
+            
+            _ = array[indexPath.row]
+            
             return collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
         }
         //_ = collectionView.numberOfSections
@@ -148,6 +152,21 @@ class UICollectionViewTests: XCTestCase {
             .insertItems([IndexPath(row: 2, section: 0)]),
             .insertItems([IndexPath(row: 1, section: 0)]),
             .insertItems([IndexPath(row: 0, section: 0)]),
+            .endUpdates
+            ]
+        )
+    }
+    func testBatchDeletes() {
+        array.batchUpdate { (array) in
+            array.remove(at: 0)
+            array.remove(at: 1)
+        }
+        
+        XCTAssert(collectionView.observedEvents == [
+            .reload,
+            .beginUpdates,
+            .deleteItems([IndexPath(row: 0, section: 0)]),
+            .deleteItems([IndexPath(row: 2, section: 0)]),
             .endUpdates
             ]
         )
