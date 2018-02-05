@@ -139,7 +139,6 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 switch kind {
                 case .reload:
                     collectionView.reloadData()
-                    _  = collectionView.numberOfSections // this hack forces collectionView to really reload data.
                 case .insertItems(let indexPaths):
                     collectionView.insertItems(at: indexPaths)
                 case .deleteItems(let indexPaths):
@@ -181,6 +180,7 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                     applyEventOfKind(event.kind)
                 }
             }
+            _  = collectionView.numberOfSections // this hack forces collectionView to really reload data.
         }
         
         return disposable
