@@ -36,8 +36,11 @@ public protocol CollectionViewBondDelegate {
     associatedtype DataSource: DataSourceProtocol
     
     func sizeForRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
-    func sizeForHeader(in section: Int, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
+    func referenceSizeForHeader(in section: Int, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
+    func referenceSizeForFooter(in section: Int, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
     func insetForSection(at section: Int, collectionView: UICollectionView, dataSource: DataSource) -> UIEdgeInsets
+    func minimumLineSpacingForSection(at section: Int, collectionView: UICollectionView, dataSource: DataSource) -> CGFloat
+    func minimumInteritemSpacingForSection(at section: Int, collectionView: UICollectionView, dataSource: DataSource) -> CGFloat
     func didSelectRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource)
 }
 
@@ -98,7 +101,14 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
             property: dataSource,
             to: #selector(UICollectionViewDelegateFlowLayout.collectionView(_:layout:referenceSizeForHeaderInSection:)),
             map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, referenceSizeForHeaderInSection: Int) -> CGSize in
-                return delegate.sizeForHeader(in: referenceSizeForHeaderInSection, collectionView: collectionView, dataSource: dataSource!)
+                return delegate.referenceSizeForHeader(in: referenceSizeForHeaderInSection, collectionView: collectionView, dataSource: dataSource!)
+        })
+        
+        disposable += collectionView.reactive.delegate.feed(
+            property: dataSource,
+            to: #selector(UICollectionViewDelegateFlowLayout.collectionView(_:layout:referenceSizeForFooterInSection:)),
+            map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, referenceSizeForHeaderInSection: Int) -> CGSize in
+                return delegate.referenceSizeForFooter(in: referenceSizeForHeaderInSection, collectionView: collectionView, dataSource: dataSource!)
         })
         
         disposable += collectionView.reactive.delegate.feed(
@@ -108,6 +118,20 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
                 return delegate.insetForSection(at: section, collectionView: collectionView, dataSource: dataSource!)
         })
         
+        disposable += collectionView.reactive.delegate.feed(
+            property: dataSource,
+            to: #selector(UICollectionViewDelegateFlowLayout.collectionView(_:layout:minimumLineSpacingForSectionAt:)),
+            map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, section: Int) -> CGFloat in
+                return delegate.minimumLineSpacingForSection(at: section, collectionView: collectionView, dataSource: dataSource!)
+        })
+        
+        
+        disposable += collectionView.reactive.delegate.feed(
+            property: dataSource,
+            to: #selector(UICollectionViewDelegateFlowLayout.collectionView(_:layout:minimumInteritemSpacingForSectionAt:)),
+            map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, section: Int) -> CGFloat in
+                return delegate.minimumInteritemSpacingForSection(at: section, collectionView: collectionView, dataSource: dataSource!)
+        })
         
         disposable += collectionView.reactive.delegate.feed(
             property: dataSource,
