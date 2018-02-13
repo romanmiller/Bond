@@ -36,6 +36,7 @@ public protocol CollectionViewBondDelegate {
     associatedtype DataSource: DataSourceProtocol
     
     func sizeForRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
+    func sizeForHeader(in section: Int, collectionView: UICollectionView, dataSource: DataSource) -> CGSize
     func didSelectRow(at indexPath: IndexPath, collectionView: UICollectionView, dataSource: DataSource)
 }
 
@@ -91,6 +92,14 @@ public extension SignalProtocol where Element: DataSourceEventProtocol, Element.
             map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, indexPath: IndexPath) -> CGSize in
                 return delegate.sizeForRow(at: indexPath as IndexPath, collectionView: collectionView, dataSource: dataSource!)
         })
+        
+        disposable += collectionView.reactive.delegate.feed(
+            property: dataSource,
+            to: #selector(UICollectionViewDelegateFlowLayout.collectionView(_:layout:referenceSizeForHeaderInSection:)),
+            map: { (dataSource: DataSource?, collectionView: UICollectionView, layout: UICollectionViewLayout, referenceSizeForHeaderInSection: Int) -> CGSize in
+                return delegate.sizeForHeader(in: referenceSizeForHeaderInSection, collectionView: collectionView, dataSource: dataSource!)
+        })
+        
         
         disposable += collectionView.reactive.delegate.feed(
             property: dataSource,
